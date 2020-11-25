@@ -1,0 +1,160 @@
+     1                                  
+     2                                  ; Two strings containing characters are given. Calculate and display the result of the concatenation of all characters of type decimal number from the second string,
+     3                                  ; and then followed by those from the first string, and vice versa, the result of concatenating the characters from the first string after those from the second string.
+     4                                  
+     5                                  bits 32
+     6                                  
+     7                                  global start
+     8                                  
+     9                                  extern printf, exit
+    10                                  import printf msvcrt.dll
+    11                                  import exit msvcrt.dll
+    12                                  
+    13                                  %include "CheckDecimal.asm"
+     1                              <1> 
+     2                              <1> %ifndef _CHECKDECIMAL_ASM_
+     3                              <1> %define _CHECKDECIMAL_ASM_
+     4                              <1> 
+     5                              <1> ; Check if a given character is a number (in the set {0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
+     6                              <1> 
+     7                              <1> checkDecimal:
+     8 00000000 8B442404            <1>     mov eax, [esp + 4]  ; mov the charater into eax
+     9 00000004 83F830              <1>     cmp eax, "0"        ;
+    10 00000007 7308                <1>     jae .skip1          ; check if the ascii code of the character is above the one of "0"
+    11 00000009 B800000000          <1>     mov eax, 0          ; the result of the comparison is stored in eax (in this case, false)
+    12 0000000E C20400              <1>     ret 4               ; return and clean the stack
+    13                              <1>     .skip1:             ;
+    14 00000011 83F839              <1>     cmp eax, "9"        ;
+    15 00000014 7608                <1>     jbe .skip2          ; check if the ascii code of the character is below the one of "9"
+    16 00000016 B800000000          <1>     mov eax, 0          ; the result of the comparison is stored in eax (in this case, false)
+    17 0000001B C20400              <1>     ret 4               ; return and clean stack
+    18                              <1>     .skip2:             ;
+    19 0000001E B801000000          <1>     mov eax, 1          ; the result of the comparison is stored in eax (in this case, true)
+    20 00000023 C20400              <1>     ret 4               ; return and clean the stack
+    21                              <1>     
+    22                              <1> %endif
+    14                                  
+    15                                  segment data use32 class = data
+    16 00000026 616263313233646566-         string1 db "abc123def9", 0
+    16 0000002F 3900               
+    17 00000031 316534623665656539-         string2 db "1e4b6eee9", 0
+    17 0000003A 00                 
+    18 0000003B 257300000A0000000D-         format dd "%s", 10, 13, 0
+    18 00000044 00000000000000     
+    19 0000004B <res 000000C8>              result resb 200
+    20                                  
+    21                                  segment code use32 class = code
+    22                                      start:
+    23                                          
+    24                                          ; ---------- Concatenate string 1 with string 2 ----------
+    25                                          part1:
+    26                                              
+    27                                              ; ---------- Parse the first string ----------
+    28                                              
+    29 00000000 BA00000000                          mov edx, 0  ; initialise edx
+    30 00000005 BE00000000                          mov esi, 0  ; initialise esi
+    31 0000000A BF00000000                          mov edi, 0  ; initialise edig
+    32                                              
+    33                                              .parse_string1:
+    34 0000000F 8A96[26000000]                          mov dl, [string1 + esi]  ; move the current letter in dl
+    35 00000015 83FA00                                  cmp edx, 0               ;
+    36 00000018 7415                                    je .end_parse_1          ; check if the letter == 0 (the string reached its end), if true go to the next step
+    37 0000001A 52                                      push dword edx           ; push the letter
+    38 0000001B E8(00000000)                            call checkDecimal        ; check if the letter is a number
+    39 00000020 83F801                                  cmp eax, 1               ;
+    40 00000023 7507                                    jne .skip1               ; if the letter is not a number skip the operation
+    41 00000025 8897[4B000000]                          mov [result + edi], dl   ; append the number to the result
+    42 0000002B 47                                      inc edi                  ; edi = edi + 1
+    43                                                  .skip1:                  ;
+    44 0000002C 46                                      inc esi                  ; esi = esi + 1
+    45 0000002D EBE0                                    jmp .parse_string1       ; go back to repeat the algorithm for the next letter
+    46                                              .end_parse_1:
+    47                                              
+    48                                              ; ---------- Parse the second string ----------
+    49                                              
+    50 0000002F BA00000000                          mov edx, 0  ; initialise edx
+    51 00000034 BE00000000                          mov esi, 0  ; initialise esi
+    52                                              
+    53                                              .parse_string2:
+    54 00000039 8A96[31000000]                          mov dl, [string2 + esi]  ; move the current letter in dl
+    55 0000003F 83FA00                                  cmp edx, 0               ;
+    56 00000042 7415                                    je .end_parse_2          ; check if the letter == 0 (the string reached its end), if true go to the next step
+    57 00000044 52                                      push dword edx           ; push the letter
+    58 00000045 E8(00000000)                            call checkDecimal        ; check if the letter is a number
+    59 0000004A 83F801                                  cmp eax, 1               ;
+    60 0000004D 7507                                    jne .skip2               ; if the letter is not a number skip the operation
+    61 0000004F 8897[4B000000]                          mov [result + edi], dl   ; append the number to the result
+    62 00000055 47                                      inc edi                  ; edi = edi + 1
+    63                                                  .skip2:                  ;
+    64 00000056 46                                      inc esi                  ; esi = esi + 1
+    65 00000057 EBE0                                    jmp .parse_string2       ; go back to repeat the algorithm for the next letter
+    66                                              .end_parse_2:
+    67                                              
+    68                                              ; ---------- Print first the result ----------
+    69                                              
+    70                                              .print_result:
+    71 00000059 C687[4B000000]0A                        mov byte [result + edi], 10     ; put a new line at the end of the string
+    72 00000060 C687[4D000000]00                        mov byte [result + edi + 2], 0  ; put a 0 at the end of the result to mark its end
+    73 00000067 68[4B000000]                            push dword result               ; push result onto stack
+    74 0000006C 68[3B000000]                            push dword format               ; push format onto stack
+    75 00000071 FF15[00000000]                          call [printf]                   ; print the result
+    76 00000077 83C408                                  add esp, 4*2                    ; clean stack
+    77                                          
+    78                                          
+    79                                          
+    80                                          ; ---------- Concatenate string 2 with string 1 ----------
+    81                                          part2:
+    82                                              
+    83                                              ; ---------- Parse the second string ----------
+    84                                              
+    85 0000007A BA00000000                          mov edx, 0  ; initialise edx
+    86 0000007F BE00000000                          mov esi, 0  ; initialise esi
+    87 00000084 BF00000000                          mov edi, 0  ; initialise edig
+    88                                              
+    89                                              .parse_string2:
+    90 00000089 8A96[31000000]                          mov dl, [string2 + esi]  ; move the current letter in dl
+    91 0000008F 83FA00                                  cmp edx, 0               ;
+    92 00000092 7415                                    je .end_parse_2          ; check if the letter == 0 (the string reached its end), if true go to the next step
+    93 00000094 52                                      push dword edx           ; push the letter
+    94 00000095 E8(00000000)                            call checkDecimal        ; check if the letter is a number
+    95 0000009A 83F801                                  cmp eax, 1               ;
+    96 0000009D 7507                                    jne .skip2               ; if the letter is not a number skip the operation
+    97 0000009F 8897[4B000000]                          mov [result + edi], dl   ; append the number to the result
+    98 000000A5 47                                      inc edi                  ; edi = edi + 1
+    99                                                  .skip2:                  ;
+   100 000000A6 46                                      inc esi                  ; esi = esi + 1
+   101 000000A7 EBE0                                    jmp .parse_string2       ; go back to repeat the algorithm for the next letter
+   102                                              .end_parse_2:
+   103                                              
+   104                                              ; ---------- Parse the first string ----------
+   105                                              
+   106 000000A9 BA00000000                          mov edx, 0  ; initialise edx
+   107 000000AE BE00000000                          mov esi, 0  ; initialise esi
+   108                                              
+   109                                              .parse_string1:
+   110 000000B3 8A96[26000000]                          mov dl, [string1 + esi]  ; move the current letter in dl
+   111 000000B9 83FA00                                  cmp edx, 0               ;
+   112 000000BC 7415                                    je .end_parse_1          ; check if the letter == 0 (the string reached its end), if true go to the next step
+   113 000000BE 52                                      push dword edx           ; push the letter
+   114 000000BF E8(00000000)                            call checkDecimal        ; check if the letter is a number
+   115 000000C4 83F801                                  cmp eax, 1               ;
+   116 000000C7 7507                                    jne .skip1               ; if the letter is not a number skip the operation
+   117 000000C9 8897[4B000000]                          mov [result + edi], dl   ; append the number to the result
+   118 000000CF 47                                      inc edi                  ; edi = edi + 1
+   119                                                  .skip1:                  ;
+   120 000000D0 46                                      inc esi                  ; esi = esi + 1
+   121 000000D1 EBE0                                    jmp .parse_string1       ; go back to repeat the algorithm for the next letter
+   122                                              .end_parse_1:
+   123                                              
+   124                                              ; ---------- Print the second result ----------
+   125                                              
+   126                                              .print_result:
+   127 000000D3 C687[4B000000]0A                        mov byte [result + edi], 10     ; put a new line at the end of the string
+   128 000000DA C687[4D000000]00                        mov byte [result + edi + 2], 0  ; put a 0 at the end of the result to mark its end
+   129 000000E1 68[4B000000]                            push dword result               ; push result onto stack
+   130 000000E6 68[3B000000]                            push dword format               ; push format onto stack
+   131 000000EB FF15[00000000]                          call [printf]                   ; print the result
+   132 000000F1 83C408                                  add esp, 4*2                    ; clean stack
+   133                                      
+   134 000000F4 6A00                        push dword 0
+   135 000000F6 FF15[00000000]              call [exit]

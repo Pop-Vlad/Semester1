@@ -1,0 +1,19 @@
+     1                                  gfryfgiefe: add 3, 4
+     1          ******************       error: invalid combination of opcode and operands
+     2                                  
+     3                                  ; Check if a given character is a number (in the set {0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
+     4                                  
+     5                                  checkDecimal:
+     6 00000000 66678B442404                mov eax, [esp + 4]  ; mov the charater into eax
+     7 00000006 6683F830                    cmp eax, "0"        ;
+     8 0000000A 7309                        jae .skip1          ; check if the ascii code of the character is above the one of "0"
+     9 0000000C 66B800000000                mov eax, 0          ; the result of the comparison is stored in eax (in this case, false)
+    10 00000012 C20400                      ret 4               ; return and clean the stack
+    11                                      .skip1:             ;
+    12 00000015 6683F839                    cmp eax, "9"        ;
+    13 00000019 7609                        jbe .skip2          ; check if the ascii code of the character is below the one of "9"
+    14 0000001B 66B800000000                mov eax, 0          ; the result of the comparison is stored in eax (in this case, false)
+    15 00000021 C20400                      ret 4               ; return and clean stack
+    16                                      .skip2:             ;
+    17 00000024 66B801000000                mov eax, 1          ; the result of the comparison is stored in eax (in this case, true)
+    18 0000002A C20400                      ret 4               ; return and clean the stack

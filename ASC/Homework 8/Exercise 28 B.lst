@@ -1,0 +1,83 @@
+     1                                  
+     2                                  ; A file name (defined in data segment) is given. Create a file with the given name, then read words from the keyboard until character '$' is read. Write only the words that contain at least one lowercase letter to 
+     3                                  
+     4                                  bits 32
+     5                                  
+     6                                  global start
+     7                                  
+     8                                  extern exit, scanf, fopen, fclose, fprintf
+     9                                  import exit msvcrt.dll
+    10                                  import scanf msvcrt.dll
+    11                                  import fopen msvcrt.dll
+    12                                  import fclose msvcrt.dll
+    13                                  import fprintf msvcrt.dll
+    14                                  
+    15                                  segment data use32 class = data
+    16 00000000 6F75747075742E7478-         file_name dd "output.txt", 0  ; file_name = output.txt
+    16 00000009 74000000000000     
+    17 00000010 7700000000000000            access_mode dd "w", 0         ; access_mode = write
+    18 00000018 FFFFFFFF                    file_descriptor dd -1         ; file_descriptor = -1
+    19 0000001C 2573000000000000            read_format dd "%s", 0        ; read_format = string
+    20 00000024 2573200000000000            write_format dd "%s ", 0      ; create the write_format
+    21 0000002C <res 00000100>              current_sting resb 256        ; reserve 256 for the string
+    22                                      
+    23                                  segment code use32 class = code
+    24                                  
+    25                                      start:
+    26                                          
+    27                                          ; ---------- File creation / opening ----------
+    28                                          file_open:
+    29 00000000 68[10000000]                        push dword access_mode      ; push access_mode = write
+    30 00000005 68[00000000]                        push dword file_name        ; push file_name = "output.txt"
+    31 0000000A FF15[00000000]                      call [fopen]                ; eax = descriptor of "output.txt"
+    32 00000010 83C408                              add esp, 4*2                ; clean stack
+    33 00000013 A3[18000000]                        mov [file_descriptor], eax  ; file_descriptor = eax
+    34                                          
+    35                                          beginning:
+    36                                          
+    37                                          ; ---------- Reading a string from keyboard ----------
+    38                                          read:
+    39 00000018 68[2C000000]                        push dword current_sting  ; push current_sting
+    40 0000001D 68[1C000000]                        push dword read_format    ; push read_format = string
+    41 00000022 FF15[00000000]                      call [scanf]              ; current_sting = keyoard input
+    42 00000028 83C408                              add esp, 4*2              ; clean stack
+    43                                          
+    44                                          ; ---------- Check if string == $ ----------
+    45                                          check_for_character:
+    46 0000002B 803D[2C000000]24                    cmp byte [current_sting], '$'  ;
+    47 00000032 7440                                je file_close                  ; if current_sting == $ go to file_close
+    48                                          
+    49                                          ; ---------- Analyze the current string. If it has a lowercase letter, write it to the file ----------
+    50 00000034 B900000000                      mov ecx, 0
+    51                                          analyze_string:
+    52 00000039 80B9[2C000000]00                    cmp byte [current_sting + ecx], 0     ;
+    53 00000040 74D6                                je beginning                          ; if current_sting has reached the end return to beginning
+    54 00000042 80B9[2C000000]61                    cmp byte [current_sting + ecx], 'a'   ;
+    55 00000049 7224                                jb skip                               ; if the current character in the string is less than a (not a lowercase letter) skip writting it to file
+    56 0000004B 80B9[2C000000]7A                    cmp byte [current_sting + ecx], 'z'   ;
+    57 00000052 771B                                ja skip                               ; if the current character in the string is greater than z (not a lowercase letter) skip writting it to file
+    58                                                  
+    59                                                  ; ---------- Write a word to the file ----------
+    60                                                  write_to_file:
+    61 00000054 68[2C000000]                                push dword current_sting      ; push current_sting
+    62 00000059 68[24000000]                                push dword write_format       ; push write_format
+    63 0000005E FF35[18000000]                              push dword [file_descriptor]  ; push file_descriptor
+    64 00000064 FF15[00000000]                              call [fprintf]                ; write current_sting to the file
+    65 0000006A 83C40C                                      add esp, 4*3                  ; clean stack
+    66 0000006D EBA9                                        jmp beginning                 ; return to beginning
+    67                                              
+    68                                              skip:
+    69 0000006F 41                                      inc ecx             ; ecx = ecx + 1
+    70 00000070 EBC7                                    jmp analyze_string  ; go to analyzing the next letter
+    71                                          
+    72                                          
+    73 00000072 EBA4                            jmp beginning  ; repeat the instructions above (beginning from read) until $ is given as input
+    74                                          
+    75                                          ; ---------- Closing the file ----------
+    76                                          file_close:
+    77 00000074 FF35[18000000]                      push dword [file_descriptor]  ; push file_descriptor
+    78 0000007A FF15[00000000]                      call [fclose]                 ; close "output.txt"
+    79 00000080 83C404                              add esp, 4                    ; clean the stack
+    80                                      
+    81 00000083 6A00                        push dword 0
+    82 00000085 FF15[00000000]              call [exit]

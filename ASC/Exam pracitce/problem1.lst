@@ -1,0 +1,112 @@
+     1                                  
+     2                                  bits 32
+     3                                  
+     4                                  global start
+     5                                  
+     6                                  extern exit, fopen, fread, printf, fclose
+     7                                  import exit msvcrt.dll
+     8                                  import fopen msvcrt.dll
+     9                                  import fread msvcrt.dll
+    10                                  import printf msvcrt.dll
+    11                                  import fclose msvcrt.dll
+    12                                  
+    13                                  segment data use32 class = data
+    14 00000000 72312E74787400              file_name db "r1.txt", 0
+    15 00000007 7200000000000000            access_mode dd "r", 0
+    16 0000000F 00000000                    file_descriptor dd 0
+    17                                      str_size equ 100
+    18 00000013 <res 00000064>              source resb str_size
+    19 00000077 <res 00000064>              destination resb str_size
+    20 000000DB 2573000000000000            format dd "%s", 0
+    21 000000E3 2569000000000000            format_test dd "%i", 0
+    22 000000EB 77657200                    test_ db "wer", 0
+    23                                  
+    24                                  segment code use32 class = code
+    25                                      start:
+    26                                          
+    27                                          ;open file
+    28 00000000 68[07000000]                    push dword access_mode
+    29 00000005 68[00000000]                    push dword file_name
+    30 0000000A FF15[00000000]                  call [fopen]
+    31 00000010 83C408                          add esp, 4*2
+    32 00000013 A3[0F000000]                    mov [file_descriptor], eax
+    33                                          
+    34                                          ;read string
+    35 00000018 FF35[0F000000]                  push dword [file_descriptor]
+    36 0000001E 6A64                            push dword str_size
+    37 00000020 6A01                            push dword 1
+    38 00000022 68[13000000]                    push dword source
+    39 00000027 FF15[00000000]                  call [fread]
+    40 0000002D 83C410                          add esp, 4*4
+    41                                          
+    42                                          ;initilalise conversion
+    43 00000030 BE[13000000]                    mov esi, source
+    44 00000035 BF[77000000]                    mov edi, destination
+    45 0000003A FC                              cld
+    46                                          
+    47                                          operate_letter:
+    48                                          
+    49 0000003B AC                              lodsb
+    50 0000003C 3C00                            cmp al, 0
+    51 0000003E 7453                            je finish
+    52                                          
+    53                                          ;convert current letter
+    54                                          decode:
+    55                                      
+    56 00000040 83F861                              cmp eax, "a"
+    57 00000043 7507                                jne skip1
+    58 00000045 B879000000                              mov eax, "y"
+    59 0000004A EB44                                    jmp back
+    60                                              skip1:
+    61 0000004C 83F862                              cmp eax, "b"
+    62 0000004F 7507                                jne skip2
+    63 00000051 B87A000000                              mov eax, "z"
+    64 00000056 EB38                                    jmp back
+    65                                              skip2:
+    66 00000058 83F863                              cmp eax, "c"
+    67 0000005B 720A                                jb skip3
+    68 0000005D 83F87A                                  cmp eax, "z"
+    69 00000060 83E802                                      sub eax, 2
+    70 00000063 EB2B                                        jmp back
+    71 00000065 7700                                    ja skip3
+    72                                              
+    73                                              skip3:
+    74 00000067 83F841                              cmp eax, "A"
+    75 0000006A 7507                                jne skip4
+    76 0000006C B859000000                              mov eax, "Y"
+    77 00000071 EB1D                                    jmp back
+    78                                              skip4:
+    79 00000073 83F842                              cmp eax, "B"
+    80 00000076 7507                                jne skip5
+    81 00000078 B85A000000                              mov eax, "Z"
+    82 0000007D EB11                                    jmp back
+    83                                              skip5:
+    84 0000007F 83F843                              cmp eax, "C"
+    85 00000082 720C                                jb back
+    86 00000084 83F85A                                  cmp eax, "Z"
+    87 00000087 83E802                                      sub eax, 2
+    88 0000008A EB04                                        jmp back
+    89 0000008C 7702                                    ja back
+    90                                              
+    91 0000008E EB00                                jmp back
+    92                                              
+    93                                          back:
+    94                                          ;store converted letter
+    95 00000090 AA                              stosb
+    96 00000091 EBA8                            jmp operate_letter
+    97                                          
+    98                                          finish:
+    99                                          
+   100                                          ;print message
+   101 00000093 68[77000000]                    push dword destination
+   102 00000098 68[DB000000]                    push dword format
+   103 0000009D FF15[00000000]                  call [printf]
+   104 000000A3 83C408                          add esp, 4*2
+   105                                          
+   106                                          ;close file
+   107 000000A6 68[00000000]                    push dword file_name
+   108 000000AB FF15[00000000]                  call [fclose]
+   109                                          
+   110                                          ;exit
+   111 000000B1 6A00                            push dword 0
+   112 000000B3 FF15[00000000]                  call [exit]

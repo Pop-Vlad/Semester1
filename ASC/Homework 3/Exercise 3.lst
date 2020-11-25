@@ -1,0 +1,53 @@
+     1                                  ; (a*a+b/c-1)/(b+c)+d-x; a-word; b-byte; c-word; d-doubleword; x-qword
+     2                                  ; Unsigned representation
+     3                                  
+     4                                  bits 32
+     5                                  
+     6                                  global start
+     7                                  
+     8                                  extern exit
+     9                                  import exit msvcrt.dll
+    10                                  
+    11                                  segment data use32 class=data
+    12 00000000 0E00                        a dw 14
+    13 00000002 1D                          b db 29
+    14 00000003 0200                        c dw 2
+    15 00000005 66000000                    d dd 102
+    16 00000009 1000000000000000            x dq 16
+    17                                      
+    18                                      
+    19                                  segment code use32 class=code
+    20                                      start:
+    21                                          
+    22 00000000 31C0                            xor eax, eax  ; eax = 0
+    23 00000002 66A1[00000000]                  mov ax, [a]   ; ax = a
+    24 00000008 66F725[00000000]                mul word [a]  ; dx:ax = a*a 
+    25 0000000F 6689D1                          mov cx, dx
+    26 00000012 6689C3                          mov bx, ax    ; cx:bx = a*a
+    27                                          
+    28 00000015 B800000000                      mov eax, 0    ; eax = 0
+    29 0000001A A0[02000000]                    mov al, [b]   ; al = b, ax = b
+    30 0000001F 66BA0000                        mov dx, 0     ; dx:ax = b
+    31 00000023 66F735[03000000]                div word [c]  ; ax = b/c
+    32                                          
+    33 0000002A 6601D8                          add ax, bx
+    34 0000002D 6683D100                        adc cx, 0     ; cx:ax = a*a + b/c
+    35 00000031 6683E801                        sub ax, 1
+    36 00000035 6683D900                        sbb cx, 0     ; cx:ax = a*a + b/c - 1
+    37 00000039 6689CA                          mov dx, cx    ; dx:ax = a*a + b/c - 1
+    38                                          
+    39 0000003C BB00000000                      mov ebx, 0    ; ebx = 0
+    40 00000041 8A1D[02000000]                  mov bl, [b]   ; bl = b, bx = b
+    41 00000047 66031D[03000000]                add bx, [c]   ; bx = b + c
+    42                                          
+    43 0000004E 66F7F3                          div bx        ; ax = (a*a + b/c - 1)/(b + c)
+    44                                          
+    45 00000051 BA00000000                      mov edx, 0    ; edx = 0
+    46 00000056 0305[05000000]                  add eax, [d]  
+    47 0000005C 83D200                          adc edx, 0    ; edx:eax = (a*a + b/c - 1)/(b + c) + d
+    48                                          
+    49 0000005F 2B05[09000000]                  sub eax, [x]
+    50 00000065 1B15[0B000000]                  sbb edx, [x+2]; edx:eax = (a*a + b/c - 1)/(b + c) + d - x
+    51                                          
+    52 0000006B 6A00                            push    dword 0
+    53 0000006D FF15[00000000]                  call    [exit]

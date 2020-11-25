@@ -1,0 +1,65 @@
+     1                                  
+     2                                  bits 32
+     3                                  
+     4                                  global start
+     5                                  
+     6                                  extern exit, printf
+     7                                  import exit msvcrt.dll
+     8                                  import printf msvcrt.dll
+     9                                  
+    10                                  segment data use32 class = data
+    11 00000000 770000000000000000-         sir dq 1110111b, 100000000h, 0ABCD0002E7FCh, 5, 0
+    11 00000009 00000001000000FCE7-
+    11 00000012 0200CDAB0000050000-
+    11 0000001B 000000000000000000-
+    11 00000024 00000000           
+    12 00000028 <res 00000190>              res resd 100
+    13 000001B8 25622000                    print_format db "%b ", 0
+    14                                  
+    15                                  segment code use32 class = code
+    16                                  start:
+    17                                      
+    18 00000000 BE[00000000]                mov esi, sir
+    19 00000005 BF[28000000]                mov edi, res
+    20                                      
+    21                                      begin:
+    22 0000000A 8B06                            mov eax, [esi]
+    23 0000000C 83F800                          cmp eax, 0
+    24 0000000F 742A                            je finish
+    25 00000011 83C608                          add esi, 8
+    26                                          
+    27 00000014 B200                            mov dl, 0
+    28 00000016 B920000000                      mov ecx, 32
+    29                                          find_sequence:
+    30 0000001B BB07000000                          mov ebx, 111b
+    31 00000020 21C3                                and ebx, eax
+    32 00000022 D1E8                                shr eax, 1
+    33 00000024 83FB07                              cmp ebx, 111b
+    34 00000027 7506                                jne skip
+    35 00000029 80C201                                  add dl, 1
+    36 0000002C C1E802                                  shr eax, 2
+    37                                              skip:
+    38 0000002F E2EA                            loop find_sequence
+    39                                          
+    40 00000031 80FA02                          cmp dl, 2
+    41 00000034 7203                            jb skip2
+    42 00000036 8B06                                mov eax, [esi]
+    43 00000038 AB                                  stosd
+    44                                          skip2:
+    45 00000039 EBCF                            jmp begin
+    46                                      finish:
+    47                                      
+    48 0000003B BE[28000000]                mov esi, res
+    49                                      print:
+    50 00000040 AD                              lodsd
+    51 00000041 83F800                          cmp eax, 0
+    52 00000044 7411                            je end_of_program
+    53 00000046 68[B8010000]                    push dword print_format
+    54 0000004B 50                              push eax
+    55 0000004C FF15[00000000]                  call [printf]
+    56 00000052 83C408                          add esp, 4*2
+    57 00000055 EBE9                            jmp print
+    58                                      end_of_program:
+    59                                      
+    60 00000057 6A00                        push dword 0
+    61 00000059 FF15[00000000]              call [exit]

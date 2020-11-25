@@ -1,0 +1,66 @@
+     1                                  
+     2                                  ; Two character strings S1 and S2 are given.
+     3                                  ; Obtain the string D by concatenating the elements found on the positions multiple of 3 from S1 and the elements of S2 in reverse order. 
+     4                                  
+     5                                  ; Example:
+     6                                  ; S1: '+', '4', '2', 'a', '8', '4', 'X', '5'
+     7                                  ; S2: 'a', '4', '5'
+     8                                  ; D: '+', 'a', 'X', '5', '4', 'a'
+     9                                  
+    10                                  bits 32
+    11                                  
+    12                                  global start
+    13                                  
+    14                                  extern exit
+    15                                  import exit msvcrt.dll
+    16                                  
+    17                                  segment data use32 class=data
+    18                                  
+    19 00000000 2B34326138345835            S1 db '+', '4', '2', 'a', '8', '4', 'X', '5'
+    20                                      LS1 equ $-S1
+    21 00000008 613435                      S2 db 'a', '4', '5'
+    22                                      LS2 equ $-S2
+    23 0000000B 00<rept>                    D times LS1 db 0
+    24 00000013 00<rept>                    D1 times LS2 db 0
+    25                                  
+    26                                  segment code use32 class=code
+    27                                      start:
+    28                                          
+    29                                          ; ------ Obtain the characters from S1 ------
+    30                                          
+    31 00000000 B808000000                      mov eax, LS1 ; eax = LS1
+    32 00000005 BA00000000                      mov edx, 0   ; edx:eax = LS1
+    33 0000000A BB03000000                      mov ebx, 3   ; ebx = 3
+    34 0000000F F7F3                            div ebx      ; eax = LS1 / 3 , edx = LS1 % 3
+    35 00000011 83FA00                          cmp edx, 0   ; check if LS1 % 3 = 0
+    36 00000014 7401                            je skip
+    37 00000016 40                                  inc eax      ; eax = LS1 / 3 + 1
+    38                                          skip:
+    39 00000017 89C1                            mov ecx, eax ; ecx = Ls1 / 3 (+ 1) (the number of times step 1 is looped)
+    40 00000019 BE00000000                      mov esi, 0   ; esi = 0
+    41 0000001E BF00000000                      mov edi, 0   ; edi = 0
+    42                                          
+    43                                          step1:
+    44 00000023 8A86[00000000]                      mov al, [S1 + esi] ; al = character from S1
+    45 00000029 8887[0B000000]                      mov [D + edi], al  ; D = D + character from S1
+    46 0000002F 83C603                              add esi, 3         ; esi = esi + 3
+    47 00000032 83C701                              add edi, 1         ; edi = edi + 1
+    48 00000035 E2EC                            loop step1
+    49                                          
+    50                                          ; ------ Obtain the characters from S2 ------
+    51                                          
+    52 00000037 B903000000                      mov ecx, LS2 ; ecx = LS2 (the number of times step 2 is looped)
+    53 0000003C BE03000000                      mov esi, LS2 ; esi = LS2
+    54 00000041 4E                              dec esi      ; esi = LS2 - 1
+    55                                              
+    56                                          step2:
+    57 00000042 8A86[08000000]                      mov al, [S2 + esi] ; al = character from S2
+    58 00000048 8887[0B000000]                      mov [D + edi], al  ; D = D + character from S2
+    59 0000004E 4E                                  dec esi            ; esi = esi - 1
+    60 0000004F 47                                  inc edi            ; edi = edi + 1
+    61 00000050 E2F0                            loop step2
+    62                                          
+    63                                          ; -------------------------------------------
+    64                                          
+    65 00000052 6A00                            push dword 0
+    66 00000054 FF15[00000000]                  call [exit]

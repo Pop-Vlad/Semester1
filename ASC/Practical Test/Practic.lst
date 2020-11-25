@@ -1,0 +1,111 @@
+     1                                  
+     2                                  ; Read from the keyboard a filename of file which contains sentences
+     3                                  ; The program will reverse the last word from each sentence.
+     4                                  ; The program will display on the console the reversed words.  
+     5                                  
+     6                                  bits 32
+     7                                  
+     8                                  global start
+     9                                  
+    10                                  extern exit, fopen, fclose, fread, scanf, printf
+    11                                  import exit msvcrt.dll
+    12                                  import fopen msvcrt.dll
+    13                                  import fclose msvcrt.dll
+    14                                  import fread msvcrt.dll
+    15                                  import scanf msvcrt.dll
+    16                                  import printf msvcrt.dll
+    17                                  
+    18                                  segment data use32 class=data
+    19                                      max_length equ 100
+    20 00000000 257300                      read_format db "%s", 0
+    21 00000003 <res 00000014>              file_name resb 20
+    22 00000017 7200                        access_mode db "r", 0
+    23 00000019 00000000                    file_descriptor dd 0
+    24 0000001D <res 00000064>              text resb max_length
+    25 00000081 00000000                    len dd 0
+    26 00000085 257300                      write_format db "%s", 0
+    27 00000088 <res 00000064>              result resb max_length
+    28 000000EC 00000000                    index_poit dd 0
+    29 000000F0 00000000                    index_space dd 0
+    30                                      
+    31 000000F4 7B                          test_ db 123
+    32 000000F5 256400                      test_format db "%d", 0
+    33                                      
+    34                                  segment code use32 class=code
+    35                                      start:
+    36                                          
+    37                                          ; Reading the file name from the keyboard
+    38 00000000 68[03000000]                    push dword file_name
+    39 00000005 68[00000000]                    push dword read_format
+    40 0000000A FF15[00000000]                  call [scanf]
+    41 00000010 83C408                          add esp, 4*2
+    42                                          
+    43                                          ; Opening the file
+    44 00000013 68[17000000]                    push dword access_mode
+    45 00000018 68[03000000]                    push dword file_name
+    46 0000001D FF15[00000000]                  call [fopen]
+    47 00000023 A3[19000000]                    mov [file_descriptor], eax
+    48 00000028 83C408                          add esp, 4*2
+    49                                          
+    50                                          ; Reading the text
+    51 0000002B FF35[19000000]                  push dword [file_descriptor]
+    52 00000031 6A01                            push dword 1
+    53 00000033 6A64                            push dword max_length
+    54 00000035 68[1D000000]                    push dword text
+    55 0000003A FF15[00000000]                  call [fread]
+    56 00000040 83C410                          add esp, 4*4
+    57 00000043 A3[81000000]                    mov [len], eax
+    58                                          
+    59 00000048 BE[1D000000]                    mov esi, text
+    60 0000004D BF[88000000]                    mov edi, result
+    61 00000052 B900000000                      mov ecx, 0
+    62                                          
+    63                                          parse:
+    64                                          
+    65 00000057 FC                              cld
+    66 00000058 AC                              lodsb
+    67 00000059 41                              inc ecx
+    68 0000005A 3C00                            cmp al, 0
+    69 0000005C 741F                            je finish
+    70 0000005E 3C2E                            cmp al, "."
+    71 00000060 7402                            je get_last_word
+    72 00000062 EBF3                            jmp parse
+    73                                          
+    74                                          get_last_word:
+    75 00000064 83E902                          sub ecx, 2
+    76                                          get_last_word_parse:
+    77 00000067 8A81[1D000000]                  mov al, [text + ecx]
+    78 0000006D 3C20                            cmp al, " "
+    79 0000006F 7404                            je end_of_word
+    80 00000071 AA                              stosb
+    81 00000072 49                              dec ecx
+    82 00000073 EBF2                            jmp get_last_word_parse
+    83                                          end_of_word:
+    84 00000075 B020                            mov al, " "
+    85 00000077 AA                              stosb
+    86 00000078 83C102                          add ecx, 2
+    87 0000007B EBDA                            jmp parse
+    88                                          
+    89                                          finish:
+    90                                          
+    91                                          ; Printing the result text
+    92 0000007D 68[88000000]                    push dword result
+    93 00000082 68[85000000]                    push dword write_format
+    94 00000087 FF15[00000000]                  call [printf]
+    95 0000008D 83C408                          add esp, 4*2
+    96                                          
+    97                                          ; Closing the file
+    98 00000090 FF35[19000000]                  push dword [file_descriptor]
+    99 00000096 FF15[00000000]                  call [fclose]
+   100 0000009C 83C404                          add esp, 4
+   101                                          
+   102                                          ; Exiting the program
+   103 0000009F 6A00                            push dword 0
+   104 000000A1 FF15[00000000]                  call [exit]
+   105                                          
+   106                                          
+   107                                  
+   108                                  
+   109                                  
+   110                                          
+   111                                          

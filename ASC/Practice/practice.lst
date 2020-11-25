@@ -1,0 +1,22 @@
+     1                                  bits 32
+     2                                  
+     3                                  global start
+     4                                  
+     5                                  extern exit
+     6                                  import exit msvcrt.dll
+     7                                  
+     8                                  segment data use32 class = data
+     9 00000000 0A002D002000140064-         source dw 10, 45, 32, 20, 100
+     9 00000009 00                 
+    10                                      len equ ($ - source) // 2
+    11 0000000A <res 00000005>              destination resb len
+    12                                  
+    13                                  segment code use32 class = code
+    14                                  start:
+    15                                      
+    16 00000000 B81F000000                  mov eax, 11111b
+    17 00000005 B400                        mov ah, 0
+    18 00000007 80C401                      add ah, 1
+    19                                      
+    20 0000000A 6A00                        push dword 0
+    21 0000000C FF15[00000000]              call [exit]

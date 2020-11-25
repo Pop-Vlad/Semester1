@@ -1,0 +1,54 @@
+     1                                  ; Given the word A, obtain the integer number n represented on the bits 0-2 of A. Then obtain the word B by rotating A n positions to the right. Compute the doubleword C:
+     2                                  ; the bits 8-15 of C have the value 0
+     3                                  ; the bits 16-23 of C are the same as the bits of 2-9 of B
+     4                                  ; the bits 24-31 of C are the same as the bits of 7-14 of A
+     5                                  ; the bits 0-7 of C have the value 1
+     6                                  
+     7                                  bits 32
+     8                                  
+     9                                  global start
+    10                                  
+    11                                  extern exit
+    12                                  import exit msvcrt.dll
+    13                                  
+    14                                  segment data use32 class=data
+    15                                  
+    16 00000000 2AAE                        A dw 1010111000101010b
+    17 00000002 00                          n db 0
+    18 00000003 0000                        B dw 0
+    19 00000005 00000000                    C dd 0
+    20                                      
+    21                                  segment code use32 class=code
+    22                                      start:
+    23                                          
+    24                                          ; ------ Calculate n ------
+    25                                          
+    26 00000000 66A1[00000000]                  mov ax, [A]       ; ax= A
+    27 00000006 2407                            and al, 00000111b ; al = a2 a1 a0
+    28 00000008 A2[02000000]                    mov [n], al       ; n = a2 a1 a0
+    29                                          
+    30                                          ; ------ Calculate B ------
+    31                                          
+    32 0000000D 66A1[00000000]                  mov ax, [A]       ; ax = A
+    33 00000013 8A0D[02000000]                  mov cl, [n]       ; cl = n
+    34 00000019 66D3C8                          ror ax, cl        ; ax = A (rotated by n position )
+    35 0000001C 66A3[03000000]                  mov [B], ax       ; B = A (rotated by n position )
+    36                                          
+    37                                          ; ------ Calculate C ------
+    38                                          
+    39 00000022 B000                            mov al, 00000000b ; al = 00000000
+    40 00000024 A2[06000000]                    mov [C+1], al     ; bits 8-15 of C = 00000000
+    41                                          
+    42 00000029 66A1[03000000]                  mov ax, [B]       ; ax = B
+    43 0000002F 66C1E802                        shr ax, 2         ; al = bits 2 -9 of B
+    44 00000033 A2[07000000]                    mov [C+2], al     ; bits 16 - 23 of C = bits 2 - 9 of B
+    45                                          
+    46 00000038 66A1[00000000]                  mov ax, [A]       ; ax = A
+    47 0000003E 66C1E807                        shr ax, 7         ; al = bits 7 -14 of A
+    48 00000042 A2[08000000]                    mov [C+3], al     ; bits 24 - 31 of C = bits 7 -14 of A
+    49                                          
+    50 00000047 B0FF                            mov al, 11111111b ; al = 11111111
+    51 00000049 A2[05000000]                    mov [C], al       ; bits 0 - 7 of C = 11111111
+    52                                          
+    53 0000004E 6A00                            push    dword 0
+    54 00000050 FF15[00000000]                  call    [exit]

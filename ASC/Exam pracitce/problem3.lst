@@ -1,0 +1,84 @@
+     1                                  
+     2                                  bits 32
+     3                                  
+     4                                  global start
+     5                                  
+     6                                  extern exit, scanf, printf, fopen, fclose, fread
+     7                                  import exit msvcrt.dll
+     8                                  import scanf msvcrt.dll
+     9                                  import printf msvcrt.dll
+    10                                  import fopen msvcrt.dll
+    11                                  import fclose msvcrt.dll
+    12                                  import fread msvcrt.dll
+    13                                  
+    14                                  segment data use32 class = data
+    15                                      max_length equ 10
+    16 00000000 <res 0000000A>              file_name resb max_length
+    17 0000000A 7200                        access_mode db "r", 0
+    18 0000000C 00                          file_descriptor db 0
+    19 0000000D 257300                      read_format_file db "%s", 0
+    20 00000010 256400                      read_format_N db "%d", 0
+    21 00000013 00                          current_byte db 0
+    22 00000014 00000000                    sum dd 0
+    23 00000018 53756D3A20256400            write_format db "Sum: %d", 0
+    24 00000020 00                          N db 0
+    25                                      
+    26                                  
+    27                                  segment code use32 class = code
+    28                                  start:
+    29                                      
+    30 00000000 68[00000000]                push file_name
+    31 00000005 68[0D000000]                push read_format_file
+    32 0000000A FF15[00000000]              call [scanf]
+    33 00000010 83C408                      add esp, 4*2
+    34                                      
+    35 00000013 68[20000000]                push N
+    36 00000018 68[10000000]                push read_format_N
+    37 0000001D FF15[00000000]              call [scanf]
+    38 00000023 83C408                      add esp, 4*2
+    39                                      
+    40 00000026 68[0A000000]                push access_mode
+    41 0000002B 68[00000000]                push file_name
+    42 00000030 FF15[00000000]              call [fopen]
+    43 00000036 83C408                      add esp, 4*2
+    44 00000039 A3[0C000000]                mov [file_descriptor], eax
+    45                                      
+    46 0000003E B801000000                  mov eax, 1
+    47 00000043 8A1D[20000000]              mov bl, [N]
+    48 00000049 BA00000000                  mov edx, 0
+    49                                      
+    50                                      parse_file:
+    51 0000004E FF35[0C000000]              push dword [file_descriptor]
+    52 00000054 6A01                        push dword 1
+    53 00000056 6A01                        push dword 1
+    54 00000058 68[13000000]                push current_byte
+    55 0000005D FF15[00000000]              call [fread]
+    56 00000063 83C410                      add esp, 4*4
+    57 00000066 83F800                      cmp eax, 0
+    58 00000069 742C                        je finish
+    59 0000006B FF35[13000000]              push dword [current_byte]
+    60 00000071 68[18000000]                push write_format
+    61 00000076 FF15[00000000]              call [printf]
+    62 0000007C 83C408                      add esp, 4*2
+    63 0000007F A0[13000000]                mov al, [current_byte]
+    64                                      here:
+    65 00000084 8B0D[20000000]              mov ecx, [N]
+    66 0000008A D0D0                            rcl al, 1
+    67 0000008C 8315[14000000]00                adc dword [sum], 0
+    68 00000093 E2EF                        loop here
+    69                                      
+    70                                      
+    71 00000095 EBB7                        jmp parse_file
+    72                                      
+    73                                      finish:
+    74 00000097 FF35[0C000000]              push dword [file_descriptor]
+    75 0000009D FF15[00000000]              call [fclose]
+    76 000000A3 83C404                      add esp, 4
+    77                                      
+    78 000000A6 FF35[14000000]              push dword [sum]
+    79 000000AC 68[18000000]                push write_format
+    80 000000B1 FF15[00000000]              call [printf]
+    81 000000B7 83C408                      add esp, 4*2
+    82                                      
+    83 000000BA 6A00                        push dword 0
+    84 000000BC FF15[00000000]              call [exit]
